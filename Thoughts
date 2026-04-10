@@ -1,0 +1,57 @@
+Entities:
+account - accountId, customerId, country -------- Composition for balance and transaction, account - main entity, one to many
+Balance - accountId, currency, availableAmount
+Transaction - accountId, transactionId, amount, currency, description, direction, balanceAfterTransaction
+
+EndPoints:
+createAccount - IN (customerId, country, currencies || OUT (accountId, customerId, (currencies + available amount))
+getAccount - IN (accountId) || OUT (accountId, customerId, (currencies + available amount))
+createTransaction - IN (accountId, amount, currency, direction, description) || OUT (accountId, transactionId, amount, currency, direction, description, balanceAfterTransaction)
+getTransactions - IN (accountId) || OUT (accountId, transactionId, amount, currency, direction, description)
+
+Rules:
+currencies, 1 of: EUR, USD, SEK, GBP
+directions, 1 of: IN/OUT
+amount must be positive
+description required
+insufficient balance
+account exists
+balance for request currency must exist
+
+DB:
+accounts - accountId (primary key) , customerId, country (countryCode: EE/DE/RU/etc...)
+balances - accountId (foreign key), balanceId (primary key), currency (USD/EUR/SEK/GBP), availableAmount (Decimal) || unique (accountId + currency)
+transactions - accountId (foreign key), transactionId (primary key), amount (Decimal), currency (USD/EUR/SEK/GBP), description, direction (IN/OUT), balanceAfterTransaction (Decimal)
+EVERYTHING NOTNULL!!!! AMOUNTS > 0!!!!
+
+EndPoint logic:
+1. createAccount
+request validation - DB generates accountId - create balance for each currency (basic amount: 0) - RABBITMQ event - response
+2. getAccount
+request validation - find account by accountId - find balances by accountId - response
+3. createTransaction
+request validation - find account - find balance by accountId + validate business rules + currency - update balance - create transaction - RABBITMQ event - response
+4. getTransactions
+request validation - find transactions by accountId - response
+
+validation - check if exists, check if valid
+
+Errors:
+1. createAccount
+invalid/null/not unique currency - Deny request
+invalid/null country (ONLY COUNTRY CODE) - Deny request
+invalid/null customerId - Deny request
+2. getAccount
+invalid/null accountId - Deny request
+3. createTransaction
+invalid/null accountId - Deny request
+invalid/null amount (amount <= 0) - Deny request
+invalid/null currency (ONLY GBP, EUR, USD, SEK) - Deny request
+invalid/null direction (ONLY IN/OUT) - Deny request
+null/empty description - Deny request
+balance in currency{currency} not exists - Deny request
+insufficient balance - Deny request
+4. getTransactions
+invalid/null accountId - Deny request
+
+todo think about idempotency, 2 transactions at the same time, unfinished operations, round amount to 2 digits (10.0001$ not allowed)
