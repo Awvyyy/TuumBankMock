@@ -4,12 +4,38 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.example.tuumbankmock.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpServerErrorException;
+
 import java.time.Instant;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> illegalArgumentExceptionHandler(
+            IllegalArgumentException ex,
+            HttpServletRequest request
+    ) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage(),
+                request.getRequestURI());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request
+    ) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Invalid request body.",
+                request.getRequestURI()
+        );
+    }
 
     @ExceptionHandler(AccountNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAccountNotFound(
