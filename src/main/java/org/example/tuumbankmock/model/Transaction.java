@@ -1,7 +1,6 @@
 package org.example.tuumbankmock.model;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 
 public class Transaction {
     private Long transactionId;

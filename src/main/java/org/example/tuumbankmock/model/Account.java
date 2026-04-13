@@ -1,7 +1,5 @@
 package org.example.tuumbankmock.model;
 
-import java.time.Instant;
-
 public class Account {
     private Long accountId;
     private Long customerId;

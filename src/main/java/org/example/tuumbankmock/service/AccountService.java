@@ -28,6 +28,29 @@ public class AccountService {
         this.balanceMapper = balanceMapper;
     }
 
+    private void validateCreateAccountRequest(CreateAccountRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request must not be null");
+        }
+
+        if (request.getCustomerId() == null) {
+            throw new IllegalArgumentException("Customer ID must not be null");
+        }
+
+        if (request.getCountry() == null || request.getCountry().isBlank()) {
+            throw new IllegalArgumentException("Country must not be blank");
+        }
+
+        if (request.getCurrencies() == null || request.getCurrencies().isEmpty()) {
+            throw new IllegalArgumentException("Currencies must not be empty");
+        }
+
+        Set<Currency> uniqueCurrencies = new HashSet<>(request.getCurrencies());
+        if (uniqueCurrencies.size() != request.getCurrencies().size()) {
+            throw new IllegalArgumentException("Duplicate currencies are not allowed");
+        }
+    }
+
     @Transactional
     public CreateAccountResponse createAccount(CreateAccountRequest request) {
         validateCreateAccountRequest(request);
@@ -61,29 +84,6 @@ public class AccountService {
         response.setBalances(balanceResponses);
 
         return response;
-    }
-
-    private void validateCreateAccountRequest(CreateAccountRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Request must not be null");
-        }
-
-        if (request.getCustomerId() == null) {
-            throw new IllegalArgumentException("Customer ID must not be null");
-        }
-
-        if (request.getCountry() == null || request.getCountry().isBlank()) {
-            throw new IllegalArgumentException("Country must not be blank");
-        }
-
-        if (request.getCurrencies() == null || request.getCurrencies().isEmpty()) {
-            throw new IllegalArgumentException("Currencies must not be empty");
-        }
-
-        Set<Currency> uniqueCurrencies = new HashSet<>(request.getCurrencies());
-        if (uniqueCurrencies.size() != request.getCurrencies().size()) {
-            throw new IllegalArgumentException("Duplicate currencies are not allowed");
-        }
     }
 
     public GetAccountResponse getAccountById(Long accountId) {
