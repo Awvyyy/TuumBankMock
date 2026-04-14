@@ -63,6 +63,7 @@ class TransactionServiceTest {
 
         CreateTransactionRequest request = request(
                 accountId,
+                "idem-001",
                 "50.00",
                 Currency.EUR,
                 Direction.IN,
@@ -115,6 +116,7 @@ class TransactionServiceTest {
 
         CreateTransactionRequest request = request(
                 accountId,
+                "idem-002",
                 "40.00",
                 Currency.EUR,
                 Direction.OUT,
@@ -152,6 +154,7 @@ class TransactionServiceTest {
 
         CreateTransactionRequest request = request(
                 accountId,
+                "idem-003",
                 "40.00",
                 Currency.EUR,
                 Direction.OUT,
@@ -175,6 +178,7 @@ class TransactionServiceTest {
 
         CreateTransactionRequest request = request(
                 accountId,
+                "idem-004",
                 "10.00",
                 Currency.EUR,
                 Direction.IN,
@@ -201,6 +205,7 @@ class TransactionServiceTest {
 
         CreateTransactionRequest request = request(
                 accountId,
+                "idem-005",
                 "10.00",
                 Currency.EUR,
                 Direction.IN,
@@ -218,6 +223,7 @@ class TransactionServiceTest {
 
     private CreateTransactionRequest request(
             Long accountId,
+            String idempotencyKey,
             String amount,
             Currency currency,
             Direction direction,
@@ -225,6 +231,7 @@ class TransactionServiceTest {
     ) {
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setAccountId(accountId);
+        request.setIdempotencyKey(idempotencyKey);
         request.setAmount(new BigDecimal(amount));
         request.setCurrency(currency);
         request.setDirection(direction);

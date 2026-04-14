@@ -25,6 +25,7 @@ class TransactionIntegrationTest extends AbstractIntegrationTest {
         String requestJson = """
                 {
                   "accountId": %d,
+                  "idempotencyKey": "tx-int-001",
                   "amount": 150.00,
                   "currency": "EUR",
                   "direction": "IN",
@@ -67,6 +68,7 @@ class TransactionIntegrationTest extends AbstractIntegrationTest {
         String requestJson = """
                 {
                   "accountId": %d,
+                  "idempotencyKey": "tx-int-002",
                   "amount": 10.00,
                   "currency": "EUR",
                   "direction": "OUT",
@@ -108,6 +110,7 @@ class TransactionIntegrationTest extends AbstractIntegrationTest {
                         .content("""
                                 {
                                   "accountId": %d,
+                                  "idempotencyKey": "tx-int-003",
                                   "amount": 100.00,
                                   "currency": "EUR",
                                   "direction": "IN",
@@ -121,6 +124,7 @@ class TransactionIntegrationTest extends AbstractIntegrationTest {
                         .content("""
                                 {
                                   "accountId": %d,
+                                  "idempotencyKey": "tx-int-004",
                                   "amount": 25.00,
                                   "currency": "EUR",
                                   "direction": "OUT",

@@ -12,7 +12,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,6 +38,7 @@ class TransactionConcurrencyIntegrationTest extends AbstractIntegrationTest {
 
         transactionService.createTransaction(request(
                 accountId,
+                "deposit-002",
                 "100.00",
                 Currency.EUR,
                 Direction.IN,
@@ -44,8 +50,8 @@ class TransactionConcurrencyIntegrationTest extends AbstractIntegrationTest {
         CountDownLatch start = new CountDownLatch(1);
 
         List<Callable<String>> tasks = List.of(
-                withdrawalTask(accountId, ready, start),
-                withdrawalTask(accountId, ready, start)
+                withdrawalTask(accountId, "withdraw-001", ready, start),
+                withdrawalTask(accountId, "withdraw-002", ready, start)
         );
 
         List<Future<String>> futures = new ArrayList<>();
@@ -92,7 +98,12 @@ class TransactionConcurrencyIntegrationTest extends AbstractIntegrationTest {
         assertEquals(2, transactionsCount, "There should be 2 transactions total: 1 deposit + 1 successful withdrawal");
     }
 
-    private Callable<String> withdrawalTask(Long accountId, CountDownLatch ready, CountDownLatch start) {
+    private Callable<String> withdrawalTask(
+            Long accountId,
+            String idempotencyKey,
+            CountDownLatch ready,
+            CountDownLatch start
+    ) {
         return () -> {
             ready.countDown();
             start.await();
@@ -100,6 +111,7 @@ class TransactionConcurrencyIntegrationTest extends AbstractIntegrationTest {
             try {
                 transactionService.createTransaction(request(
                         accountId,
+                        idempotencyKey,
                         "80.00",
                         Currency.EUR,
                         Direction.OUT,
@@ -137,6 +149,7 @@ class TransactionConcurrencyIntegrationTest extends AbstractIntegrationTest {
 
     private CreateTransactionRequest request(
             Long accountId,
+            String idempotencyKey,
             String amount,
             Currency currency,
             Direction direction,
@@ -144,6 +157,7 @@ class TransactionConcurrencyIntegrationTest extends AbstractIntegrationTest {
     ) {
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setAccountId(accountId);
+        request.setIdempotencyKey(idempotencyKey);
         request.setAmount(new BigDecimal(amount));
         request.setCurrency(currency);
         request.setDirection(direction);

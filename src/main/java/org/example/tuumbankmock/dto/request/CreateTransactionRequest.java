@@ -2,11 +2,13 @@ package org.example.tuumbankmock.dto.request;
 
 import org.example.tuumbankmock.model.Currency;
 import org.example.tuumbankmock.model.Direction;
+
 import java.math.BigDecimal;
 
 public class CreateTransactionRequest {
 
     private Long accountId;
+    private String idempotencyKey;
     private BigDecimal amount;
     private Currency currency;
     private Direction direction;
@@ -18,6 +20,14 @@ public class CreateTransactionRequest {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 
     public BigDecimal getAmount() {

@@ -3,13 +3,18 @@ package org.example.tuumbankmock.model;
 import java.math.BigDecimal;
 
 public class Transaction {
+
     private Long transactionId;
     private Long accountId;
+    private String idempotencyKey;
     private BigDecimal amount;
     private Currency currency;
     private Direction direction;
     private String description;
     private BigDecimal balanceAfterTransaction;
+
+    public Transaction() {
+    }
 
     public Long getTransactionId() {
         return transactionId;
@@ -25,6 +30,14 @@ public class Transaction {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 
     public BigDecimal getAmount() {
@@ -65,8 +78,5 @@ public class Transaction {
 
     public void setBalanceAfterTransaction(BigDecimal balanceAfterTransaction) {
         this.balanceAfterTransaction = balanceAfterTransaction;
-    }
-
-    public Transaction() {
     }
 }

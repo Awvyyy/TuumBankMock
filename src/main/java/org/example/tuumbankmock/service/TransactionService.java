@@ -7,6 +7,7 @@ import org.example.tuumbankmock.dto.response.TransactionResponse;
 import org.example.tuumbankmock.exception.AccountNotFoundException;
 import org.example.tuumbankmock.exception.BalanceNotFoundException;
 import org.example.tuumbankmock.exception.DescriptionMissingException;
+import org.example.tuumbankmock.exception.IdempotencyConflictException;
 import org.example.tuumbankmock.exception.InsufficientFundsException;
 import org.example.tuumbankmock.exception.InvalidAmountException;
 import org.example.tuumbankmock.exception.InvalidCurrencyException;
@@ -17,6 +18,7 @@ import org.example.tuumbankmock.mapper.TransactionMapper;
 import org.example.tuumbankmock.model.Balance;
 import org.example.tuumbankmock.model.Direction;
 import org.example.tuumbankmock.model.Transaction;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +33,11 @@ public class TransactionService {
     private final BalanceMapper balanceMapper;
     private final TransactionMapper transactionMapper;
 
-    public TransactionService(AccountMapper accountMapper, BalanceMapper balanceMapper, TransactionMapper transactionMapper) {
+    public TransactionService(
+            AccountMapper accountMapper,
+            BalanceMapper balanceMapper,
+            TransactionMapper transactionMapper
+    ) {
         this.accountMapper = accountMapper;
         this.balanceMapper = balanceMapper;
         this.transactionMapper = transactionMapper;
@@ -43,6 +49,9 @@ public class TransactionService {
         }
         if (request.getAccountId() == null) {
             throw new IllegalArgumentException("AccountId cannot be null.");
+        }
+        if (request.getIdempotencyKey() == null || request.getIdempotencyKey().isBlank()) {
+            throw new IllegalArgumentException("Idempotency key cannot be null or empty.");
         }
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidAmountException("Amount must be positive.");
@@ -75,6 +84,15 @@ public class TransactionService {
             throw new BalanceNotFoundException("Balance not found.");
         }
 
+        Transaction existing = transactionMapper.findByAccountIdAndIdempotencyKey(
+                request.getAccountId(),
+                request.getIdempotencyKey()
+        );
+
+        if (existing != null) {
+            return handleExistingTransaction(existing, request);
+        }
+
         BigDecimal newAmount;
         if (request.getDirection() == Direction.OUT) {
             if (request.getAmount().compareTo(balance.getAvailableAmount()) > 0) {
@@ -87,6 +105,7 @@ public class TransactionService {
 
         Transaction transaction = new Transaction();
         transaction.setAccountId(request.getAccountId());
+        transaction.setIdempotencyKey(request.getIdempotencyKey());
         transaction.setAmount(request.getAmount());
         transaction.setCurrency(request.getCurrency());
         transaction.setDescription(request.getDescription());
@@ -98,16 +117,7 @@ public class TransactionService {
         balance.setAvailableAmount(newAmount);
         balanceMapper.updateBalance(balance);
 
-        CreateTransactionResponse response = new CreateTransactionResponse();
-        response.setTransactionId(transaction.getTransactionId());
-        response.setAccountId(request.getAccountId());
-        response.setAmount(request.getAmount());
-        response.setCurrency(request.getCurrency());
-        response.setDescription(request.getDescription());
-        response.setDirection(request.getDirection());
-        response.setBalanceAfterTransaction(newAmount);
-
-        return response;
+        return toCreateTransactionResponse(transaction);
     }
 
     public GetTransactionsResponse getTransactionsByAccountId(Long accountId) {
@@ -136,6 +146,40 @@ public class TransactionService {
         GetTransactionsResponse response = new GetTransactionsResponse();
         response.setAccountId(accountId);
         response.setTransactions(transactionResponses);
+        return response;
+    }
+
+    private CreateTransactionResponse handleExistingTransaction(
+            Transaction existing,
+            CreateTransactionRequest request
+    ) {
+        if (!sameBusinessRequest(existing, request)) {
+            throw new IdempotencyConflictException(
+                    "Idempotency key is already used for a different transaction request."
+            );
+        }
+
+        return toCreateTransactionResponse(existing);
+    }
+
+    private boolean sameBusinessRequest(Transaction existing, CreateTransactionRequest request) {
+        return existing.getAccountId().equals(request.getAccountId())
+                && existing.getAmount().compareTo(request.getAmount()) == 0
+                && existing.getCurrency() == request.getCurrency()
+                && existing.getDirection() == request.getDirection()
+                && existing.getDescription().equals(request.getDescription());
+    }
+
+    private CreateTransactionResponse toCreateTransactionResponse(Transaction transaction) {
+        CreateTransactionResponse response = new CreateTransactionResponse();
+        response.setTransactionId(transaction.getTransactionId());
+        response.setAccountId(transaction.getAccountId());
+        response.setIdempotencyKey(transaction.getIdempotencyKey());
+        response.setAmount(transaction.getAmount());
+        response.setCurrency(transaction.getCurrency());
+        response.setDirection(transaction.getDirection());
+        response.setDescription(transaction.getDescription());
+        response.setBalanceAfterTransaction(transaction.getBalanceAfterTransaction());
         return response;
     }
 }
