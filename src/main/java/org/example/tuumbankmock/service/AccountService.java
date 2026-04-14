@@ -22,11 +22,18 @@ public class AccountService {
 
     private final AccountMapper accountMapper;
     private final BalanceMapper balanceMapper;
+    private final OutboxService outboxService;
 
-    public AccountService(AccountMapper accountMapper, BalanceMapper balanceMapper) {
+    public AccountService(
+            AccountMapper accountMapper,
+            BalanceMapper balanceMapper,
+            OutboxService outboxService
+    ) {
         this.accountMapper = accountMapper;
         this.balanceMapper = balanceMapper;
+        this.outboxService = outboxService;
     }
+
 
     private void validateCreateAccountRequest(CreateAccountRequest request) {
         if (request == null) {
@@ -60,6 +67,7 @@ public class AccountService {
         account.setCountry(request.getCountry());
 
         accountMapper.insertAccount(account);
+        outboxService.saveAccountCreatedEvent(account);
 
         List<BalanceResponse> balanceResponses = new ArrayList<>();
 
@@ -70,11 +78,11 @@ public class AccountService {
             balance.setAvailableAmount(BigDecimal.ZERO);
 
             balanceMapper.insertBalance(balance);
+            outboxService.saveBalanceCreatedEvent(balance);
 
             BalanceResponse balanceResponse = new BalanceResponse();
             balanceResponse.setCurrency(balance.getCurrency());
             balanceResponse.setAvailableAmount(balance.getAvailableAmount());
-
             balanceResponses.add(balanceResponse);
         }
 

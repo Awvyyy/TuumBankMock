@@ -32,16 +32,20 @@ public class TransactionService {
     private final AccountMapper accountMapper;
     private final BalanceMapper balanceMapper;
     private final TransactionMapper transactionMapper;
+    private final OutboxService outboxService;
 
     public TransactionService(
             AccountMapper accountMapper,
             BalanceMapper balanceMapper,
-            TransactionMapper transactionMapper
+            TransactionMapper transactionMapper,
+            OutboxService outboxService
     ) {
         this.accountMapper = accountMapper;
         this.balanceMapper = balanceMapper;
         this.transactionMapper = transactionMapper;
+        this.outboxService = outboxService;
     }
+
 
     private void validateCreateTransactionRequest(CreateTransactionRequest request) {
         if (request == null) {
@@ -116,6 +120,9 @@ public class TransactionService {
 
         balance.setAvailableAmount(newAmount);
         balanceMapper.updateBalance(balance);
+
+        outboxService.saveTransactionCreatedEvent(transaction);
+        outboxService.saveBalanceUpdatedEvent(balance);
 
         return toCreateTransactionResponse(transaction);
     }

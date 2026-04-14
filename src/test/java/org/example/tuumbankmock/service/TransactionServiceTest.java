@@ -42,6 +42,9 @@ class TransactionServiceTest {
     @Mock
     private TransactionMapper transactionMapper;
 
+    @Mock
+    private OutboxService outboxService;
+
     @InjectMocks
     private TransactionService transactionService;
 

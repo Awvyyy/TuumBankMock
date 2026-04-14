@@ -11,7 +11,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
         "spring.datasource.driver-class-name=org.testcontainers.jdbc.ContainerDatabaseDriver",
         "spring.datasource.username=postgres",
         "spring.datasource.password=postgres",
-        "spring.sql.init.mode=always"
+        "spring.sql.init.mode=always",
+        "app.outbox.publisher.fixed-delay-ms=600000"
 })
 @AutoConfigureMockMvc
 public abstract class AbstractIntegrationTest {
@@ -21,6 +22,6 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
-        jdbcTemplate.execute("TRUNCATE TABLE transactions, balances, accounts RESTART IDENTITY CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE outbox_events, transactions, balances, accounts RESTART IDENTITY CASCADE");
     }
 }
