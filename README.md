@@ -394,7 +394,11 @@ This project includes automated tests across:
 - idempotency scenarios
 - outbox publishing scenarios
 
-> If JaCoCo is enabled in the final version of the project, the generated report can be attached here.
+JaCoCo result:
+- overall instruction coverage: **88%**
+- branch coverage: **65%**
+
+This satisfies the assignment requirement of at least **80% test coverage**.
 
 ---
 
@@ -537,18 +541,6 @@ RabbitMQ delivery is effectively at-least-once in this setup. Consumers must han
 
 ### 7. Read/write scaling
 If traffic grows significantly, reads and writes may need different scaling strategies, and database partitioning or sharding may become necessary depending on workload.
-
----
-
-## Coverage
-
-The project includes automated tests across service, controller, integration, concurrency, idempotency, and outbox layers.
-
-JaCoCo result:
-- overall instruction coverage: **88%**
-- branch coverage: **65%**
-
-This satisfies the assignment requirement of at least **80% test coverage**.
 
 ---
 
