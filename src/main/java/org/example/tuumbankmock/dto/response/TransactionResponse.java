@@ -2,14 +2,17 @@ package org.example.tuumbankmock.dto.response;
 
 import org.example.tuumbankmock.model.Currency;
 import org.example.tuumbankmock.model.Direction;
+
 import java.math.BigDecimal;
 
 public class TransactionResponse {
+
     private Long transactionId;
     private BigDecimal amount;
     private Currency currency;
     private Direction direction;
     private String description;
+    private BigDecimal balanceAfterTransaction;
 
     public Long getTransactionId() {
         return transactionId;
@@ -49,5 +52,13 @@ public class TransactionResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public BigDecimal getBalanceAfterTransaction() {
+        return balanceAfterTransaction;
+    }
+
+    public void setBalanceAfterTransaction(BigDecimal balanceAfterTransaction) {
+        this.balanceAfterTransaction = balanceAfterTransaction;
     }
 }

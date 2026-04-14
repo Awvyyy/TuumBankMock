@@ -4,7 +4,13 @@ import org.example.tuumbankmock.dto.request.CreateTransactionRequest;
 import org.example.tuumbankmock.dto.response.CreateTransactionResponse;
 import org.example.tuumbankmock.dto.response.GetTransactionsResponse;
 import org.example.tuumbankmock.dto.response.TransactionResponse;
-import org.example.tuumbankmock.exception.*;
+import org.example.tuumbankmock.exception.AccountNotFoundException;
+import org.example.tuumbankmock.exception.BalanceNotFoundException;
+import org.example.tuumbankmock.exception.DescriptionMissingException;
+import org.example.tuumbankmock.exception.InsufficientFundsException;
+import org.example.tuumbankmock.exception.InvalidAmountException;
+import org.example.tuumbankmock.exception.InvalidCurrencyException;
+import org.example.tuumbankmock.exception.InvalidDirectionException;
 import org.example.tuumbankmock.mapper.AccountMapper;
 import org.example.tuumbankmock.mapper.BalanceMapper;
 import org.example.tuumbankmock.mapper.TransactionMapper;
@@ -13,6 +19,7 @@ import org.example.tuumbankmock.model.Direction;
 import org.example.tuumbankmock.model.Transaction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,14 +66,16 @@ public class TransactionService {
             throw new AccountNotFoundException("Account not found.");
         }
 
-        Balance balance = balanceMapper.findByAccountIdAndCurrency(request.getAccountId(), request.getCurrency());
+        Balance balance = balanceMapper.findByAccountIdAndCurrencyForUpdate(
+                request.getAccountId(),
+                request.getCurrency()
+        );
 
         if (balance == null) {
             throw new BalanceNotFoundException("Balance not found.");
         }
 
         BigDecimal newAmount;
-
         if (request.getDirection() == Direction.OUT) {
             if (request.getAmount().compareTo(balance.getAvailableAmount()) > 0) {
                 throw new InsufficientFundsException("Insufficient funds.");
@@ -75,8 +84,6 @@ public class TransactionService {
         } else {
             newAmount = balance.getAvailableAmount().add(request.getAmount());
         }
-
-        balance.setAvailableAmount(newAmount);
 
         Transaction transaction = new Transaction();
         transaction.setAccountId(request.getAccountId());
@@ -87,6 +94,8 @@ public class TransactionService {
         transaction.setBalanceAfterTransaction(newAmount);
 
         transactionMapper.insertTransaction(transaction);
+
+        balance.setAvailableAmount(newAmount);
         balanceMapper.updateBalance(balance);
 
         CreateTransactionResponse response = new CreateTransactionResponse();
@@ -120,14 +129,13 @@ public class TransactionService {
             transactionResponse.setCurrency(transaction.getCurrency());
             transactionResponse.setDirection(transaction.getDirection());
             transactionResponse.setDescription(transaction.getDescription());
-
+            transactionResponse.setBalanceAfterTransaction(transaction.getBalanceAfterTransaction());
             transactionResponses.add(transactionResponse);
         }
 
         GetTransactionsResponse response = new GetTransactionsResponse();
         response.setAccountId(accountId);
         response.setTransactions(transactionResponses);
-
         return response;
     }
 }
